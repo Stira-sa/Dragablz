@@ -1,24 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Markup;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Dragablz.Dockablz
 {
-    [TemplatePart(Name = FirstContentPresenterPartName, Type=typeof(ContentPresenter))]
+    [TemplatePart(Name = FirstContentPresenterPartName, Type = typeof(ContentPresenter))]
     [TemplatePart(Name = SecondContentPresenterPartName, Type = typeof(ContentPresenter))]
     public class Branch : Control
     {
@@ -31,11 +16,11 @@ namespace Dragablz.Dockablz
         }
 
         public static readonly DependencyProperty OrientationProperty = DependencyProperty.Register(
-            "Orientation", typeof (Orientation), typeof (Branch), new PropertyMetadata(default(Orientation)));
+            "Orientation", typeof(Orientation), typeof(Branch), new PropertyMetadata(default(Orientation)));
 
         public Orientation Orientation
         {
-            get { return (Orientation) GetValue(OrientationProperty); }
+            get { return (Orientation)GetValue(OrientationProperty); }
             set { SetValue(OrientationProperty, value); }
         }
 
@@ -49,11 +34,11 @@ namespace Dragablz.Dockablz
         }
 
         public static readonly DependencyProperty FirstItemLengthProperty = DependencyProperty.Register(
-            "FirstItemLength", typeof (GridLength), typeof (Branch), new FrameworkPropertyMetadata(new GridLength(0.49999, GridUnitType.Star), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+            "FirstItemLength", typeof(GridLength), typeof(Branch), new FrameworkPropertyMetadata(new GridLength(0.49999, GridUnitType.Star), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
         public GridLength FirstItemLength
         {
-            get { return (GridLength) GetValue(FirstItemLengthProperty); }
+            get { return (GridLength)GetValue(FirstItemLengthProperty); }
             set { SetValue(FirstItemLengthProperty, value); }
         }
 
@@ -71,9 +56,9 @@ namespace Dragablz.Dockablz
 
         public GridLength SecondItemLength
         {
-            get { return (GridLength) GetValue(SecondItemLengthProperty); }
+            get { return (GridLength)GetValue(SecondItemLengthProperty); }
             set { SetValue(SecondItemLengthProperty, value); }
-        }        
+        }
 
         /// <summary>
         /// Gets the proportional size of the first item, between 0 and 1, where 1 would represent the entire size of the branch.
@@ -81,7 +66,7 @@ namespace Dragablz.Dockablz
         /// <returns></returns>
         public double GetFirstProportion()
         {
-            return (1/(FirstItemLength.Value + SecondItemLength.Value))*FirstItemLength.Value;
+            return (1 / (FirstItemLength.Value + SecondItemLength.Value)) * FirstItemLength.Value;
         }
 
         public override void OnApplyTemplate()
