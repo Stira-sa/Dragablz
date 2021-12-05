@@ -22,5 +22,20 @@ namespace Dragablz.Properties {
                 return defaultInstance;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Layout
+        {
+            get
+            {
+                return ((string)(this["Layout"]));
+            }
+            set
+            {
+                this["Layout"] = value;
+            }
+        }
     }
 }
