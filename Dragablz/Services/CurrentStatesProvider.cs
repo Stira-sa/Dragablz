@@ -71,11 +71,11 @@ namespace Dragablz.Services
                     {
                         if (items.Where(i => (i.DataContext as DragablzTabItem).CurrentState.IsMainWindow).Any())
                         {
-                            RestoreTabs(items, layoutAccessor,tabablzControl, hasWindow);
+                            RestoreTabs(items, layoutAccessor, tabablzControl, hasWindow);
                         }
                         else
                         {
-                            openedWindows.Add(() => RestoreTabs(items, layoutAccessor,tabablzControl, hasWindow));
+                            openedWindows.Add(() => RestoreTabs(items, layoutAccessor, tabablzControl, hasWindow));
                         }
                     }
                 }
