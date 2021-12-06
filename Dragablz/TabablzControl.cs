@@ -705,6 +705,7 @@ namespace Dragablz
         /// counter for DragablzTabItems order
         /// </summary>
         private static int orderCounter = 0;
+        internal static bool isMainWindowClosing;
         #endregion
         /// <summary>
         /// Called when <see cref="M:System.Windows.FrameworkElement.ApplyTemplate"/> is called.
@@ -922,7 +923,6 @@ namespace Dragablz
             if (!ConsolidateOrphanedItems || InterTabController == null) return;
 
             var window = (Window)sender;
-
             var orphanedItems = _dragablzItemsControl.DragablzItems();
             if (ConsolidatingOrphanedItemCallback != null)
             {
@@ -946,6 +946,8 @@ namespace Dragablz
                        && t.InterTabController != null
                        && t.InterTabController.Partition == InterTabController.Partition).FirstOrDefault();
                     dragablzTabItem.TabControlName = target?.Name;
+                    if (!isMainWindowClosing)
+                        dragablzTabItem.Location = DropZoneLocation.Unset;
                 }
             }
             #endregion
@@ -1087,14 +1089,19 @@ namespace Dragablz
 
         private bool MonitorReentry(DragablzDragDeltaEventArgs e)
         {
-            var screenMousePosition = _dragablzItemsControl.PointToScreen(Mouse.GetPosition(_dragablzItemsControl));
 
+            var sourceOfDragItemsControl = ItemsControl.ItemsControlFromItemContainer(e.DragablzItem) as DragablzItemsControl;
+            if (sourceOfDragItemsControl == null) throw new ApplicationException("Unable to determin source items control.");
+
+            if (Window.GetWindow(sourceOfDragItemsControl) == Application.Current.MainWindow && sourceOfDragItemsControl.Items.Count == 1)
+                return false;
             var sourceTabablzControl = (TabablzControl)e.Source;
             if (sourceTabablzControl.Items.Count > 1 && e.DragablzItem.LogicalIndex < sourceTabablzControl.FixedHeaderCount)
             {
                 return false;
             }
 
+            var screenMousePosition = _dragablzItemsControl.PointToScreen(Mouse.GetPosition(_dragablzItemsControl));
             var otherTabablzControls = LoadedInstances
                 .Where(
                     tc =>

@@ -452,6 +452,12 @@ namespace Dragablz.Dockablz
         {
             //we wait until drag is in full flow so we know the partition has been setup by the owning tab control
             _isDragOpWireUpPending = true;
+
+            var sourceOfDragItemsControl = ItemsControl.ItemsControlFromItemContainer(e.DragablzItem) as DragablzItemsControl;
+            if (sourceOfDragItemsControl == null) throw new ApplicationException("Unable to determin source items control.");
+
+            if (Window.GetWindow(sourceOfDragItemsControl) == Application.Current.MainWindow && sourceOfDragItemsControl.Items.Count == 1)
+                return;
         }
 
         private static void SetupParticipatingLayouts(DragablzItem dragablzItem)
@@ -525,7 +531,7 @@ namespace Dragablz.Dockablz
             var sourceTabControl = TabablzControl.GetOwnerOfHeaderItems(sourceOfDragItemsControl);
             if (sourceTabControl == null) throw new ApplicationException("Unable to determin source tab control.");
 
-            var floatingItemSnapShots = sourceTabControl.VisualTreeDepthFirstTraversal()
+             var floatingItemSnapShots = sourceTabControl.VisualTreeDepthFirstTraversal()
         .OfType<Layout>()
         .SelectMany(l => l.FloatingDragablzItems().Select(FloatingItemSnapShot.Take))
         .ToList();
@@ -755,6 +761,13 @@ namespace Dragablz.Dockablz
 
         private static void PreviewItemDragDelta(object sender, DragablzDragDeltaEventArgs e)
         {
+
+            var sourceOfDragItemsControl = ItemsControl.ItemsControlFromItemContainer(e.DragablzItem) as DragablzItemsControl;
+            if (sourceOfDragItemsControl == null) return;
+
+            if (Window.GetWindow(sourceOfDragItemsControl) == Application.Current.MainWindow && sourceOfDragItemsControl.Items.Count == 1)
+                return;
+
             if (e.Cancel) return;
 
             if (_isDragOpWireUpPending)
