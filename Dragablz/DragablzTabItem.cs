@@ -122,7 +122,7 @@ namespace Dragablz
                 TabControlName = TabControlName,
                 HeaderName = Header,
                 Order = Order,
-                ID = ++Layout.branchNumber,
+                ID = GetHashCode(),
                 BranchNumber = BranchNumber,
                 WindowID = WindowID,
                 WindowWidth = WindowWidth,

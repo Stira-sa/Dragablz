@@ -1547,11 +1547,15 @@ namespace Dragablz
                 dragablzTabItem.BranchNumber = ++Layout.branchNumber;
                 if (myWindow == Application.Current.MainWindow)
                     dragablzTabItem.IsMainWindow = true;
-                if (SelectedItem is DragablzTabItem selectedDragablzTabItem)
+
+                if (Items.Count > 0)
                 {
-                    dragablzTabItem.TabControlName = selectedDragablzTabItem.TabControlName;
-                    dragablzTabItem.Location = selectedDragablzTabItem.Location;
-                    dragablzTabItem.LayoutName = selectedDragablzTabItem.LayoutName;
+                    if (Items.GetItemAt(0) is DragablzTabItem targetDragablzTabItem)
+                    {
+                        dragablzTabItem.TabControlName = targetDragablzTabItem.TabControlName;
+                        dragablzTabItem.Location = targetDragablzTabItem.Location;
+                        dragablzTabItem.LayoutName = targetDragablzTabItem.LayoutName;
+                    }
                 }
             }
             #endregion
