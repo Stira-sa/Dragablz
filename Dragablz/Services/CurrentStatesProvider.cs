@@ -39,12 +39,13 @@ namespace Dragablz.Services
         /// <summary>
         /// opened windows list from last session
         /// </summary>
-        private static List<Action> openedWindows = null;
+        private static List<(Action<bool> openWindow, bool hasWindow)> openedWindows = null;
         /// <summary>
         /// Restore tabs states from last session in the given layout
         /// </summary>
         /// <param name="layout"></param>
         static bool layoutHasContent = false;
+        static LayoutAccessor mainLayoutAccessor;
         public static void RestoreItemHelper(Layout layout)
         {
             var layoutAccessor = layout.Query();
@@ -58,31 +59,33 @@ namespace Dragablz.Services
             var layoutGroups = tabItems.Where(x => x.DataContext is DragablzTabItem).GroupBy(x => (x.DataContext as DragablzTabItem).LayoutName);
 
             if (openedWindows is null)
-                openedWindows = new List<Action>();
+                openedWindows = new List<(Action<bool>, bool)>();
             foreach (var layoutGroup in layoutGroups)
             {
                 var windowsGroups = layoutGroup.Where(x => x.Content is DragablzTabItem).OrderBy(t => (t.Content as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.Content as DragablzTabItem).WindowID);
                 foreach (var windowsGroup in windowsGroups)
                 {
-                    var tabablzControl = layoutAccessor.TabablzControl;
+                    mainLayoutAccessor = layoutAccessor;
+                    var tabablzControl = mainLayoutAccessor.TabablzControl;
                     var hasWindow = false;
                     var tabControlItems = windowsGroup.Where(x => x.DataContext is DragablzTabItem).OrderBy(t => (t.DataContext as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.DataContext as DragablzTabItem).TabControlName);
                     foreach (var items in tabControlItems)
                     {
                         if (items.Where(i => (i.DataContext as DragablzTabItem).CurrentState.IsMainWindow).Any())
                         {
-                            RestoreTabs(items, layoutAccessor, tabablzControl, hasWindow);
+                            RestoreTabs(items, tabablzControl, hasWindow);
                         }
                         else
                         {
-                            openedWindows.Add(() => RestoreTabs(items, layoutAccessor, tabablzControl, hasWindow));
+                            openedWindows.Add(((hasWindow) => RestoreTabs(items, tabablzControl, hasWindow), hasWindow));
                         }
+                        hasWindow = true;
                     }
                 }
             }
         }
 
-        private static void RestoreTabs(IEnumerable<DragablzItem> newItems, LayoutAccessor layoutAccessor, TabablzControl tabablzControl, bool hasWindow)
+        private static void RestoreTabs(IEnumerable<DragablzItem> newItems, TabablzControl tabablzControl, bool hasWindow)
         {
             foreach (var itemGroup in newItems.OrderBy(t => (t.Content as DragablzTabItem).Order).GroupBy(x => (x.DataContext as DragablzTabItem).Location))
             {
@@ -96,16 +99,15 @@ namespace Dragablz.Services
                     Orientation = (location == DropZoneLocation.Right || location == DropZoneLocation.Left || location == DropZoneLocation.Unset) ? Orientation.Horizontal : Orientation.Vertical
                 };
                 INewTabHost<UIElement> newTabHost = null;
-                newTabHost = GetNewTabHostOfItem(layoutAccessor, tabablzControl, itemGroup, hasWindow);
+                newTabHost = GetNewTabHostOfItem(mainLayoutAccessor, tabablzControl, itemGroup, hasWindow);
 
                 //if the layout has no content yet do not do the branch, replace the content instead
                 object newContent = null;
                 if (newTabHost.Container is Layout layout && !hasWindow)
                 {
-                    layoutAccessor = layout.Query();
+                    mainLayoutAccessor = layout.Query();
                     newContent = layout.Content;
-                    hasWindow = true;
-                    layoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, newContent);
+                    mainLayoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, newContent);
                     continue;
                 }
                 else
@@ -116,22 +118,22 @@ namespace Dragablz.Services
 
                 if (!layoutHasContent)
                 {
-                    layoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, newContent);
+                    mainLayoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, newContent);
                     layoutHasContent = true;
                     continue;
                 }
 
                 if (location == DropZoneLocation.Right || location == DropZoneLocation.Bottom)
                 {
-                    branchItem.FirstItem = layoutAccessor.Layout.Content;
+                    branchItem.FirstItem = mainLayoutAccessor.Layout.Content;
                     branchItem.SecondItem = newContent;
                 }
                 else
                 {
                     branchItem.FirstItem = newContent;
-                    branchItem.SecondItem = layoutAccessor.Layout.Content;
+                    branchItem.SecondItem = mainLayoutAccessor.Layout.Content;
                 }
-                layoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, branchItem);
+                mainLayoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, branchItem);
             }
         }
 
@@ -278,7 +280,7 @@ namespace Dragablz.Services
             {
                 foreach (var window in openedWindows)
                 {
-                    window.Invoke();
+                    window.openWindow.Invoke(window.hasWindow);
                 }
             }
         }

@@ -945,7 +945,6 @@ namespace Dragablz
                        .Where(t => t.Name == dragablzTabItem.TabControlName
                        && t.InterTabController != null
                        && t.InterTabController.Partition == InterTabController.Partition).FirstOrDefault();
-                    dragablzTabItem.TabControlName = target?.Name;
                 }
             }
             #endregion
@@ -969,6 +968,7 @@ namespace Dragablz
                     {
                         if (target.Items.GetItemAt(0) is DragablzTabItem dragablzTabItem)
                         {
+                            //dragablzTabItem.TabControlName = target?.Name;
                             (item as DragablzTabItem).TabControlName = dragablzTabItem.TabControlName;
                             (item as DragablzTabItem).Location = dragablzTabItem.Location;
                         }
