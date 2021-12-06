@@ -211,6 +211,7 @@ namespace Dragablz.Services
         private static int windowID = 0;
         private static void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            TabablzControl.isMainWindowClosing = true;
             dragablzTabItems.Clear();
             tabablzControls.Clear();
             int counter = 0;
@@ -321,12 +322,13 @@ namespace Dragablz.Services
                     Layout.branchNumber = dragablzTabItems.Last().BranchNumber;
 
                     var state = dragablzTabItems.Where(d => d.IsMainWindow).FirstOrDefault()?.CurrentState;
+                    if (state is null)
+                        return;
+
                     Application.Current.MainWindow.Width = state.WindowWidth;
                     Application.Current.MainWindow.Height = state.WindowHeight;
                     Application.Current.MainWindow.Top = state.WindowLocationTop;
                     Application.Current.MainWindow.Left = state.WindowLocationLeft;
-                    if (state is null)
-                        return;
                 }
             }
         }
