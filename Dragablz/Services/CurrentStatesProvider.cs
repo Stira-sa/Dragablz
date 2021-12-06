@@ -55,40 +55,35 @@ namespace Dragablz.Services
             if (tabItems is null)
                 return;
             layoutAccessor.Layout.InterLayoutClient = new DefaultInterLayoutClient();
-
-            var windows = tabItems.Where(x => x.Content is DragablzTabItem).OrderBy(t => (t.Content as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.Content as DragablzTabItem).WindowID);
-            //make a list of DragablzTabs according to TabablzControl names.
-            //make a list of DragablzTabs according to Layout names.
-            //current TabablzControl
+            var layoutGroups = tabItems.Where(x => x.DataContext is DragablzTabItem).GroupBy(x => (x.DataContext as DragablzTabItem).LayoutName);
 
             if (openedWindows is null)
                 openedWindows = new List<Action>();
-
-            var tabControl = layoutAccessor.TabablzControl;
-            foreach (var windowItem in windows)
+            foreach (var layoutGroup in layoutGroups)
             {
-                var layoutItems = windowItem.Where(x => x.DataContext is DragablzTabItem).GroupBy(x => (x.DataContext as DragablzTabItem).LayoutName);
-                foreach (var layoutItem in layoutItems)
+                var windowsGroups = layoutGroup.Where(x => x.Content is DragablzTabItem).OrderBy(t => (t.Content as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.Content as DragablzTabItem).WindowID);
+                foreach (var windowsGroup in windowsGroups)
                 {
-                    var tabControlItems = layoutItem.Where(x => x.DataContext is DragablzTabItem).OrderBy(t => (t.DataContext as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.DataContext as DragablzTabItem).TabControlName);
+                    var tabablzControl = layoutAccessor.TabablzControl;
+                    var hasWindow = false;
+                    var tabControlItems = windowsGroup.Where(x => x.DataContext is DragablzTabItem).OrderBy(t => (t.DataContext as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.DataContext as DragablzTabItem).TabControlName);
                     foreach (var items in tabControlItems)
                     {
                         if (items.Where(i => (i.DataContext as DragablzTabItem).CurrentState.IsMainWindow).Any())
                         {
-                            RestoreTabs(layoutAccessor, tabControl, items);
+                            RestoreTabs(items, layoutAccessor,tabablzControl, hasWindow);
                         }
                         else
                         {
-                            openedWindows.Add(() => RestoreTabs(layoutAccessor, tabControl, items));
+                            openedWindows.Add(() => RestoreTabs(items, layoutAccessor,tabablzControl, hasWindow));
                         }
                     }
                 }
             }
         }
 
-        private static void RestoreTabs(LayoutAccessor layoutAccessor, TabablzControl tabControl, IGrouping<string, DragablzItem> newItems)
+        private static void RestoreTabs(IEnumerable<DragablzItem> newItems, LayoutAccessor layoutAccessor, TabablzControl tabablzControl, bool hasWindow)
         {
-            bool hasHost = false;
             foreach (var itemGroup in newItems.OrderBy(t => (t.Content as DragablzTabItem).Order).GroupBy(x => (x.DataContext as DragablzTabItem).Location))
             {
 
@@ -101,15 +96,15 @@ namespace Dragablz.Services
                     Orientation = (location == DropZoneLocation.Right || location == DropZoneLocation.Left || location == DropZoneLocation.Unset) ? Orientation.Horizontal : Orientation.Vertical
                 };
                 INewTabHost<UIElement> newTabHost = null;
-                newTabHost = GetNewTabHostOfItem(layoutAccessor, tabControl, itemGroup, hasHost);
+                newTabHost = GetNewTabHostOfItem(layoutAccessor, tabablzControl, itemGroup, hasWindow);
 
                 //if the layout has no content yet do not do the branch, replace the content instead
                 object newContent = null;
-                if (newTabHost.Container is Layout layout)
+                if (newTabHost.Container is Layout layout && !hasWindow)
                 {
                     layoutAccessor = layout.Query();
                     newContent = layout.Content;
-                    hasHost = true;
+                    hasWindow = true;
                     layoutAccessor.Layout.SetCurrentValue(Layout.ContentProperty, newContent);
                     continue;
                 }
@@ -149,7 +144,7 @@ namespace Dragablz.Services
         /// <param name="newTabHost"></param>
         /// <param name="sourceOfDragItemsControl"></param>
         /// <param name="sourceItem"></param>
-        private static INewTabHost<UIElement> GetNewTabHostOfItem(LayoutAccessor layoutAccessor, TabablzControl tabControl, IGrouping<DropZoneLocation, DragablzItem> relatedItems, bool hasHost)
+        private static INewTabHost<UIElement> GetNewTabHostOfItem(LayoutAccessor layoutAccessor, TabablzControl tabControl, IGrouping<DropZoneLocation, DragablzItem> relatedItems, bool hasWindow)
         {
             INewTabHost<UIElement> newTabHost = layoutAccessor.Layout.InterLayoutClient.GetNewHost(layoutAccessor.Layout.Partition, tabControl);
             if (newTabHost == null)
@@ -165,11 +160,9 @@ namespace Dragablz.Services
             //check if the tab was open from last session
             if (sourceItem is DragablzTabItem sourceDragablzTabItem)
             {
-                if (!sourceDragablzTabItem.IsMainWindow && !hasHost)
+                if (!sourceDragablzTabItem.IsMainWindow && !hasWindow)
                 {
-                    //openedWindows.Add(() => tabControl.CreateWindow(layoutAccessor.Layout, item));
-                    var tabHost = tabControl.CreateWindow(layoutAccessor.Layout, item);
-                    newTabHost = tabHost;
+                    newTabHost = tabControl.CreateWindow(layoutAccessor.Layout, item, sourceDragablzTabItem);
                 }
                 else
                 {
@@ -185,10 +178,9 @@ namespace Dragablz.Services
                     {
                         if (relatedItem.DataContext is DragablzTabItem dragablzTabItem)
                         {
-                            if (sourceDragablzTabItem.IsMainWindow && !dragablzTabItem.CurrentState.IsMainWindow && !hasHost)
+                            if (sourceDragablzTabItem.IsMainWindow && !dragablzTabItem.CurrentState.IsMainWindow && !hasWindow)
                             {
-                                var tabHost = tabControl.CreateWindow(layoutAccessor.Layout, relatedItem);
-                                newTabHost = tabHost;
+                                newTabHost = tabControl.CreateWindow(layoutAccessor.Layout, relatedItem, dragablzTabItem);
                             }
                             else
                             {
@@ -241,9 +233,15 @@ namespace Dragablz.Services
                 tabablzControls.Add(tabablzControl);
                 SignOrder(tabablzControl, true);
             }
+            try
+            {
+                Settings.Default.Layout = JsonConvert.SerializeObject((dragablzTabItems.Select(d => d.CurrentState).OrderBy(c => c.HeaderName), tabablzControls.Select(t => t.CurrentState).OrderBy(t => t.Order)), Formatting.Indented);
+                Settings.Default.Save();
+            }
+            catch
+            {
 
-            Settings.Default.Layout = JsonConvert.SerializeObject((dragablzTabItems.Select(d => d.CurrentState).OrderBy(c => c.HeaderName), tabablzControls.Select(t => t.CurrentState).OrderBy(t => t.ID)), Formatting.Indented);
-            Settings.Default.Save();
+            }
         }
         private static void SignOrder(TabablzControl tabablzControl, bool isMainWindow)
         {
@@ -287,20 +285,31 @@ namespace Dragablz.Services
         private static void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
 
-            //  Settings.Default.Layout = null;
-            var i = Settings.Default.Layout;
+            //Settings.Default.Layout = null;
+
+            var l = Settings.Default.Layout;
+            if (l is not null)
+            {
+                Clipboard.SetText(l);
+
+            }
             if (string.IsNullOrWhiteSpace(Settings.Default.Layout))
             {
                 hasMainWindowRendered = true;
                 return;
             }
-            Debug.Write(i);
-            states = JsonConvert.DeserializeObject<(DragablzTabItem.State[] dragablzTabItemState, TabablzControl.State[] tabablzControlState)>(i);
+            Debug.Write(l);
+            states = JsonConvert.DeserializeObject<(DragablzTabItem.State[] dragablzTabItemState, TabablzControl.State[] tabablzControlState)>(l);
 
             if (states.dragablzTabItemState is null || states.tabablzControlState is null)
             {
                 hasMainWindowRendered = true;
                 return;
+            }
+
+            foreach (var item in states.dragablzTabItemState.OrderBy(s => s.BranchNumber))
+            {
+                item.BranchNumber = ++Layout.branchNumber;
             }
 
             List<TabablzControl> tabs = new List<TabablzControl>();
@@ -319,7 +328,6 @@ namespace Dragablz.Services
                 {
                     RestoreState();
                     dragablzTabItems = dragablzTabItems.OrderBy(i => i.CurrentState.BranchNumber).ToList();
-                    Layout.branchNumber = dragablzTabItems.Last().BranchNumber;
 
                     var state = dragablzTabItems.Where(d => d.IsMainWindow).FirstOrDefault()?.CurrentState;
                     if (state is null)

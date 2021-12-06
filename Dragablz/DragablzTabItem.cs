@@ -31,6 +31,8 @@ namespace Dragablz
             {
                 if ((Parent as TabablzControl)?.Parent is Layout layout && string.IsNullOrEmpty((string)GetValue(LayoutNameProperty)))
                 {
+                    if (string.IsNullOrEmpty(layout.Name))
+                        layout.SetValue(NameProperty, $"L{layout.GetHashCode()}");
                     SetValue(LayoutNameProperty, layout.Name);
                     return layout.Name;
                 }
@@ -51,6 +53,9 @@ namespace Dragablz
             {
                 if (Parent is TabablzControl tabablzControl && string.IsNullOrEmpty((string)GetValue(TabControlNameProperty)))
                 {
+                    if (string.IsNullOrEmpty(tabablzControl.Name))
+                        tabablzControl.SetValue(NameProperty, $"T{tabablzControl.GetHashCode()}");
+
                     SetValue(TabControlNameProperty, tabablzControl.Name);
                     return tabablzControl.Name;
                 }
@@ -64,7 +69,7 @@ namespace Dragablz
 
         // Using a DependencyProperty as the backing store for TabControlName.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty TabControlNameProperty =
-            DependencyProperty.Register("TabControlName", typeof(string), typeof(DragablzTabItem), new PropertyMetadata(""));   
+            DependencyProperty.Register("TabControlName", typeof(string), typeof(DragablzTabItem), new PropertyMetadata(""));
 
         /// <summary>
         /// Indicates if this tab is in the application main window.
@@ -117,7 +122,7 @@ namespace Dragablz
                 TabControlName = TabControlName,
                 HeaderName = Header,
                 Order = Order,
-                ID = GetHashCode(),
+                ID = ++Layout.branchNumber,
                 BranchNumber = BranchNumber,
                 WindowID = WindowID,
                 WindowWidth = WindowWidth,
@@ -137,9 +142,9 @@ namespace Dragablz
                 IsMainWindow = value.IsMainWindow;
                 WindowID = value.WindowID;
                 WindowWidth = value.WindowWidth;
-                WindowHeight= value.WindowHeight;
-                WindowLocationTop= value.WindowLocationTop;
-                WindowLocationLeft= value.WindowLocationLeft;
+                WindowHeight = value.WindowHeight;
+                WindowLocationTop = value.WindowLocationTop;
+                WindowLocationLeft = value.WindowLocationLeft;
             }
         }
         public class State

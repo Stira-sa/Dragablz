@@ -1,13 +1,13 @@
+using Dragablz.Core;
 using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
-using Dragablz.Core;
 
 namespace Dragablz
 {
     public class DefaultInterTabClient : IInterTabClient
-    {        
+    {
         public virtual INewTabHost<Window> GetNewHost(IInterTabClient interTabClient, object partition, TabablzControl source)
         {
             if (source == null) throw new ArgumentNullException("source");
@@ -18,12 +18,13 @@ namespace Dragablz
             newWindow.Dispatcher.Invoke(new Action(() => { }), DispatcherPriority.DataBind);
 
             var newTabablzControl = newWindow.LogicalTreeDepthFirstTraversal().OfType<TabablzControl>().FirstOrDefault();
+            newTabablzControl.Name = $"T{newTabablzControl.GetHashCode()}";
             if (newTabablzControl == null) throw new ApplicationException("Unable to ascertain tab control.");
 
             if (newTabablzControl.ItemsSource == null)
                 newTabablzControl.Items.Clear();
 
-            return new NewTabHost<Window>(newWindow, newTabablzControl);            
+            return new NewTabHost<Window>(newWindow, newTabablzControl);
         }
 
         public virtual TabEmptiedResponse TabEmptiedHandler(TabablzControl tabControl, Window window)

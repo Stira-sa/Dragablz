@@ -946,8 +946,6 @@ namespace Dragablz
                        && t.InterTabController != null
                        && t.InterTabController.Partition == InterTabController.Partition).FirstOrDefault();
                     dragablzTabItem.TabControlName = target?.Name;
-                    if (!isMainWindowClosing)
-                        dragablzTabItem.Location = DropZoneLocation.Unset;
                 }
             }
             #endregion
@@ -965,6 +963,17 @@ namespace Dragablz
 
             foreach (var item in orphanedItems.Select(orphanedItem => _dragablzItemsControl.ItemContainerGenerator.ItemFromContainer(orphanedItem)))
             {
+                if (!isMainWindowClosing)
+                {
+                    if (target.Items.Count > 0)
+                    {
+                        if (target.Items.GetItemAt(0) is DragablzTabItem dragablzTabItem)
+                        {
+                            (item as DragablzTabItem).TabControlName = dragablzTabItem.TabControlName;
+                            (item as DragablzTabItem).Location = dragablzTabItem.Location;
+                        }
+                    }
+                }
                 RemoveFromSource(item);
                 target.AddToSource(item);
             }
@@ -1145,16 +1154,6 @@ namespace Dragablz
             var interTabTransfer = new InterTabTransfer(item, e.DragablzItem, mousePositionOnItem, floatingItemSnapShots);
             e.DragablzItem.IsDragging = false;
 
-            #region CurrentStatesProvider
-            if (interTabTransfer.Item is DragablzTabItem dragableTabItem)
-            {
-                dragableTabItem.TabControlName = target.tc.Name;
-                var orderedHeaders = target.tc.GetOrderedHeaders();
-                var currentStates = orderedHeaders.Select(x => x.DataContext as DragablzTabItem).FirstOrDefault();
-                dragableTabItem.Location = currentStates.Location;
-                //dragableTabItem.Location = target.tc.GetOrderedHeaders().Select(x => x.Content as DragablzTabItem).FirstOrDefault().Location;
-            }
-            #endregion
             target.tc.ReceiveDrag(interTabTransfer);
             e.Cancel = true;
 
@@ -1321,12 +1320,6 @@ namespace Dragablz
                 throw new ApplicationException("New tab host was not correctly provided");
 
             var item = _dragablzItemsControl.ItemContainerGenerator.ItemFromContainer(e.DragablzItem);
-            #region CurrentStatesProvider
-            if (item is DragablzTabItem dragablzTabItem)
-            {
-                dragablzTabItem.TabControlName = newTabHost.TabablzControl.Name;
-            }
-            #endregion
             var isTransposing = IsTransposing(newTabHost.TabablzControl);
 
             var myWindow = Window.GetWindow(this);
@@ -1391,7 +1384,7 @@ namespace Dragablz
         }
         #region CurrentStatesProvider 
 
-        public INewTabHost<UIElement> CreateWindow(Layout layout, DragablzItem dragablzItem)
+        public INewTabHost<UIElement> CreateWindow(Layout layout, DragablzItem dragablzItem, DragablzTabItem sourceItem)
         {
             if (layout == null) throw new ArgumentNullException("source");
             var sourceWindow = Window.GetWindow(layout);
@@ -1400,14 +1393,19 @@ namespace Dragablz
             this.InterTabController.Partition = layout.Partition;
 
             var currentState = (dragablzItem.DataContext as DragablzTabItem).CurrentState;
-            //var newTabHost0  =layout.InterLayoutClient.GetNewHost(this.InterTabController.Partition, this);
-            newWindow.Content = new Layout { Name = layout.Name, InterLayoutClient = layout.InterLayoutClient, Partition = layout.Partition, Content = this };
+            var newTabHost = layout.InterLayoutClient.GetNewHost(this.InterTabController.Partition, this);
+            RemoveItem(dragablzItem);
+            newTabHost.TabablzControl.SelectedItem = sourceItem;
+            newTabHost.TabablzControl.AddToSource(sourceItem);
+            newWindow.Content = new Layout { Name = layout.Name, InterLayoutClient = layout.InterLayoutClient, Partition = layout.Partition, Content = newTabHost.TabablzControl };
             newWindow.Width = currentState.WindowWidth;
             newWindow.Height = currentState.WindowHeight;
             newWindow.Top = currentState.WindowLocationTop;
             newWindow.Left = currentState.WindowLocationLeft;
 
-            var newTabHost = new NewTabHost<Window>(newWindow, this);
+            newTabHost = new NewTabHost<Window>(newWindow, newTabHost.TabablzControl);
+
+
             if (newTabHost?.TabablzControl == null || newTabHost.Container == null)
                 throw new ApplicationException("New tab host was not correctly provided");
 
@@ -1428,7 +1426,7 @@ namespace Dragablz
             #endregion
             var isTransposing = IsTransposing(newTabHost.TabablzControl);
 
-            var myWindow = Window.GetWindow(this);
+            var myWindow = Window.GetWindow(newTabHost.TabablzControl);
             if (myWindow == null) throw new ApplicationException("Unable to find owning window.");
             var floatingItemSnapShots = this.VisualTreeDepthFirstTraversal()
                         .OfType<Layout>()
@@ -1446,43 +1444,43 @@ namespace Dragablz
             if (myWindow.WindowState == WindowState.Maximized)
             {
                 var desktopMousePosition = Native.GetCursorPos().ToWpf();
-                newTabHost.Container.Left = desktopMousePosition.X - dragStartWindowOffset.X;
-                newTabHost.Container.Top = desktopMousePosition.Y - dragStartWindowOffset.Y;
+                (newTabHost.Container as Window).Left = desktopMousePosition.X - dragStartWindowOffset.X;
+                (newTabHost.Container as Window).Top = desktopMousePosition.Y - dragStartWindowOffset.Y;
             }
             else
             {
-                newTabHost.Container.Left = myWindow.Left;
-                newTabHost.Container.Top = myWindow.Top;
+                (newTabHost.Container as Window).Left = myWindow.Left;
+                (newTabHost.Container as Window).Top = myWindow.Top;
             }
-            newTabHost.Container.Show();
-            var contentPresenter = FindChildContentPresenter(item);
+            (newTabHost.Container as Window).Show();
+            //var contentPresenter = FindChildContentPresenter(item);
 
-            //stop the header shrinking if the tab stays open when empty
-            var minSize = EmptyHeaderSizingHint == EmptyHeaderSizingHint.PreviousTab
-                ? new Size(_dragablzItemsControl.ActualWidth, _dragablzItemsControl.ActualHeight)
-                : new Size();
-            System.Diagnostics.Debug.WriteLine("B " + minSize);
+            ////stop the header shrinking if the tab stays open when empty
+            //var minSize = EmptyHeaderSizingHint == EmptyHeaderSizingHint.PreviousTab
+            //    ? new Size(_dragablzItemsControl.ActualWidth, _dragablzItemsControl.ActualHeight)
+            //    : new Size();
+            //System.Diagnostics.Debug.WriteLine("B " + minSize);
 
-            RemoveFromSource(item);
-            _itemsHolder.Children.Remove(contentPresenter);
-            if (Items.Count == 0)
-            {
-                _dragablzItemsControl.MinHeight = minSize.Height;
-                _dragablzItemsControl.MinWidth = minSize.Width;
-                Layout.ConsolidateBranch(this);
-            }
+            //RemoveFromSource(item);
+            //_itemsHolder.Children.Remove(contentPresenter);
+            //if (Items.Count == 0)
+            //{
+            //    _dragablzItemsControl.MinHeight = minSize.Height;
+            //    _dragablzItemsControl.MinWidth = minSize.Width;
+            //    Layout.ConsolidateBranch(this);
+            //}
 
-            RestorePreviousSelection();
+            //RestorePreviousSelection();
 
-            foreach (var dragablzItem0 in _dragablzItemsControl.DragablzItems())
-            {
-                dragablzItem0.IsDragging = false;
-                dragablzItem0.IsSiblingDragging = false;
-            }
+            //foreach (var dragablzItem0 in _dragablzItemsControl.DragablzItems())
+            //{
+            //    dragablzItem0.IsDragging = false;
+            //    dragablzItem0.IsSiblingDragging = false;
+            //}
 
-            newTabHost.TabablzControl.ReceiveDrag(interTabTransfer);
-            interTabTransfer.OriginatorContainer.IsDropTargetFound = true;
-            return new NewTabHost<UIElement>(newTabHost.Container.Content as Layout, newTabHost.TabablzControl);
+            //newTabHost.TabablzControl.ReceiveDrag(interTabTransfer);
+            //interTabTransfer.OriginatorContainer.IsDropTargetFound = true;
+            return new NewTabHost<UIElement>((newTabHost.Container as Window).Content as Layout, newTabHost.TabablzControl);
         }
         #endregion
         private bool IsTransposing(TabControl target)
@@ -1547,15 +1545,13 @@ namespace Dragablz
             if (interTabTransfer.Item is DragablzTabItem dragablzTabItem)
             {
                 dragablzTabItem.BranchNumber = ++Layout.branchNumber;
-                dragablzTabItem.Location = DropZoneLocation.Unset;
                 if (myWindow == Application.Current.MainWindow)
-                {
                     dragablzTabItem.IsMainWindow = true;
-                    if (SelectedItem is DragablzTabItem selectedDragablzTabItem)
-                    {
-                        dragablzTabItem.TabControlName = selectedDragablzTabItem.TabControlName;
-                        dragablzTabItem.Location = selectedDragablzTabItem.Location;
-                    }
+                if (SelectedItem is DragablzTabItem selectedDragablzTabItem)
+                {
+                    dragablzTabItem.TabControlName = selectedDragablzTabItem.TabControlName;
+                    dragablzTabItem.Location = selectedDragablzTabItem.Location;
+                    dragablzTabItem.LayoutName = selectedDragablzTabItem.LayoutName;
                 }
             }
             #endregion

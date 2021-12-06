@@ -531,24 +531,12 @@ namespace Dragablz.Dockablz
             var sourceTabControl = TabablzControl.GetOwnerOfHeaderItems(sourceOfDragItemsControl);
             if (sourceTabControl == null) throw new ApplicationException("Unable to determin source tab control.");
 
-             var floatingItemSnapShots = sourceTabControl.VisualTreeDepthFirstTraversal()
-        .OfType<Layout>()
-        .SelectMany(l => l.FloatingDragablzItems().Select(FloatingItemSnapShot.Take))
-        .ToList();
+            var floatingItemSnapShots = sourceTabControl.VisualTreeDepthFirstTraversal()
+       .OfType<Layout>()
+       .SelectMany(l => l.FloatingDragablzItems().Select(FloatingItemSnapShot.Take))
+       .ToList();
 
             var sourceItem = sourceOfDragItemsControl.ItemContainerGenerator.ItemFromContainer(sourceDragablzItem);
-            #region CurrentStatesProvider
-            if (sourceItem is DragablzTabItem dragableTabItem)
-            {
-                dragableTabItem.Location = location;
-                dragableTabItem.LayoutName = Name;
-                if (Window.GetWindow(this) == Application.Current.MainWindow)
-                    dragableTabItem.IsMainWindow = true;
-
-                dragableTabItem.BranchNumber = ++branchNumber;
-                dragableTabItem.TabControlName = $"T{dragableTabItem.GetHashCode()}";
-            }
-            #endregion
             sourceTabControl.RemoveItem(sourceDragablzItem);
 
             var branchItem = new Branch
@@ -565,6 +553,17 @@ namespace Dragablz.Dockablz
                 newTabHost.TabablzControl.AddToSource(sourceItem);
                 newTabHost.TabablzControl.SelectedItem = sourceItem;
                 newContent = newTabHost.Container;
+
+                #region CurrentStatesProvider
+                if (sourceItem is DragablzTabItem dragableTabItem)
+                {
+                    dragableTabItem.Location = location;
+                    if (Window.GetWindow(this) == Application.Current.MainWindow)
+                        dragableTabItem.IsMainWindow = true;
+                    dragableTabItem.BranchNumber = ++branchNumber;
+                    dragableTabItem.TabControlName = $"T{newTabHost.TabablzControl.GetHashCode()}";
+                }
+                #endregion
 
                 Dispatcher.BeginInvoke(new Action(() => RestoreFloatingItemSnapShots(newTabHost.TabablzControl, floatingItemSnapShots)), DispatcherPriority.Loaded);
             }
@@ -584,6 +583,17 @@ namespace Dragablz.Dockablz
                   newTabControl.DataContext = sourceTabControl.DataContext;
                   newTabControl.AddToSource(sourceItem);
                   newTabControl.SelectedItem = sourceItem;
+
+                  #region CurrentStatesProvider
+                  if (sourceItem is DragablzTabItem dragableTabItem)
+                  {
+                      dragableTabItem.Location = location;
+                      if (Window.GetWindow(this) == Application.Current.MainWindow)
+                          dragableTabItem.IsMainWindow = true;
+                      dragableTabItem.BranchNumber = ++branchNumber;
+                      dragableTabItem.TabControlName = $"T{newTabControl.GetHashCode()}";
+                  }
+                  #endregion
                   Dispatcher.BeginInvoke(new Action(() => RestoreFloatingItemSnapShots(newTabControl, floatingItemSnapShots)), DispatcherPriority.Loaded);
               }), DispatcherPriority.Loaded);
             }
