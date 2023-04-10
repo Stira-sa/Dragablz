@@ -1,6 +1,7 @@
 ﻿using Dragablz.Core;
 using Dragablz.Dockablz;
 using Dragablz.Referenceless;
+using Dragablz.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1544,7 +1545,7 @@ namespace Dragablz
             #region CurrentStatesProvider
             if (interTabTransfer.Item is DragablzTabItem dragablzTabItem)
             {
-                dragablzTabItem.BranchNumber = ++Layout.branchNumber;
+                dragablzTabItem.BranchNumber = ++CurrentStatesProvider.branchNumber;
                 if (myWindow == Application.Current.MainWindow)
                     dragablzTabItem.IsMainWindow = true;
 

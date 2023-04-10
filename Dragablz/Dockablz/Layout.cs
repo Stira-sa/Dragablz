@@ -514,12 +514,6 @@ namespace Dragablz.Dockablz
             return tabablzControl != null;
         }
 
-        #region CurrentStatesProvider 
-        /// <summary>
-        /// Holds the Number of Branching Order
-        /// </summary>
-        public static int branchNumber = 0;
-        #endregion
         private void Branch(DropZoneLocation location, DragablzItem sourceDragablzItem)
         {
             if (InterLayoutClient == null)
@@ -560,7 +554,7 @@ namespace Dragablz.Dockablz
                     dragableTabItem.Location = location;
                     if (Window.GetWindow(this) == Application.Current.MainWindow)
                         dragableTabItem.IsMainWindow = true;
-                    dragableTabItem.BranchNumber = ++branchNumber;
+                    dragableTabItem.BranchNumber = ++CurrentStatesProvider.branchNumber;
                     dragableTabItem.TabControlName = $"T{newTabHost.TabablzControl.GetHashCode()}";
                 }
                 #endregion
@@ -590,7 +584,7 @@ namespace Dragablz.Dockablz
                       dragableTabItem.Location = location;
                       if (Window.GetWindow(this) == Application.Current.MainWindow)
                           dragableTabItem.IsMainWindow = true;
-                      dragableTabItem.BranchNumber = ++branchNumber;
+                      dragableTabItem.BranchNumber = ++CurrentStatesProvider.branchNumber;
                       dragableTabItem.TabControlName = $"T{newTabControl.GetHashCode()}";
                   }
                   #endregion

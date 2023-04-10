@@ -24,10 +24,10 @@ namespace DragablzDemo
 
             new QuickStartWindow().Show();
 
-            new BasicExampleMainWindow
-            {
-                DataContext = new BasicExampleMainModel()
-            }.Show();
+            //new BasicExampleMainWindow
+            //{
+            //    DataContext = new BasicExampleMainModel()
+            //}.Show();
 
             var boundExampleModel = new BoundExampleModel(
                 new HeaderedItemViewModel
@@ -69,10 +69,10 @@ namespace DragablzDemo
                         }
                 });
 
-            new BoundExampleWindow()
-            {
-                DataContext = boundExampleModel
-            }.Show();
+            //new BoundExampleWindow()
+            //{
+            //    DataContext = boundExampleModel
+            //}.Show();
 
             app.Run();
         }

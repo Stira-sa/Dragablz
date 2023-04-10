@@ -6,34 +6,63 @@
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         Title="Quick Start Window" Height="341" Width="617">
     <Window.Resources>
-        <system:String x:Key="Partition">QuickStart</system:String>
+        <system:String x:Key="Partition1">Partition1</system:String>
+        <system:String x:Key="Partition2">Main</system:String>
+        <system:String x:Key="Partition3">Partition3</system:String>
     </Window.Resources>
-    <dockablz:Layout Partition="{StaticResource Partition}">
-        <dragablz:TabablzControl Margin="8" ConsolidateOrphanedItems="True">
-            <dragablz:TabablzControl.InterTabController>
-                <dragablz:InterTabController Partition="{StaticResource Partition}" />
-            </dragablz:TabablzControl.InterTabController>
-            <TabItem Header="Tab No. 1" IsSelected="True">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">Hello World</TextBlock>
-            </TabItem>
-            <TabItem Header="Tab No. 2">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">We Have Tearable Tabs!</TextBlock>
-            </TabItem>
-            <TabItem>
-                <!-- with context menu -->
-                <TabItem.Header>
-                    <Grid>
-                        <Grid.ContextMenu>
-                            <ContextMenu>
-                                <!--we'll be in a popup, so give dragablz a hint as to what tab header content needs closing -->
-                                <MenuItem Command="{x:Static dragablz:TabablzControl.CloseItemCommand}"/>
-                            </ContextMenu>
-                        </Grid.ContextMenu>
-                        <TextBlock>Tab No. 3</TextBlock>
-                    </Grid>
-                </TabItem.Header>
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">I feel like an ice cold drink</TextBlock>
-            </TabItem>
-        </dragablz:TabablzControl>
-    </dockablz:Layout>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+        <dockablz:Layout Partition="p1"  Grid.Row="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <dockablz:Layout  Grid.Row="0">
+
+                    <dragablz:TabablzControl Margin="8" ConsolidateOrphanedItems="True">
+                        <dragablz:TabablzControl.InterTabController>
+                            <dragablz:InterTabController Partition="p3" />
+                        </dragablz:TabablzControl.InterTabController>
+                        <dragablz:DragablzTabItem Header="Tab No. 1" IsSelected="True">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">Hello World</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 2">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">We Have Tearable Tabs!</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 3">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">I feel like an ice cold drink</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 4">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">I feel like an ice cold drink</TextBlock>
+                        </dragablz:DragablzTabItem>
+                    </dragablz:TabablzControl>
+                </dockablz:Layout>
+                <dockablz:Layout Partition="p3" Grid.Row="1">
+                    <dragablz:TabablzControl Margin="8" ConsolidateOrphanedItems="True">
+                        <dragablz:TabablzControl.InterTabController>
+                            <dragablz:InterTabController Partition="p3" />
+                        </dragablz:TabablzControl.InterTabController>
+                        <dragablz:DragablzTabItem Header="Tab No. 11" IsSelected="True">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">Hello World</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 22">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">We Have Tearable Tabs!</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 33">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">I feel like an ice cold drink</TextBlock>
+                        </dragablz:DragablzTabItem>
+                        <dragablz:DragablzTabItem Header="Tab No. 44">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">I feel like an ice cold drink</TextBlock>
+                        </dragablz:DragablzTabItem>
+                    </dragablz:TabablzControl>
+                </dockablz:Layout>
+
+            </Grid>
+        </dockablz:Layout>
+        <TextBlock Text="Test" Grid.Row="2" />
+            </Grid>
 </Window>

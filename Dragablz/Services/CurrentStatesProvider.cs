@@ -19,6 +19,13 @@ namespace Dragablz.Services
         /// </summary>
         public static bool hasMainWindowRendered;
         #endregion
+
+        #region CurrentStatesProvider 
+        /// <summary>
+        /// Holds the Number of Branching Order
+        /// </summary>
+        public static int branchNumber;
+        #endregion
         static CurrentStatesProvider()
         {
             Init();
@@ -26,6 +33,7 @@ namespace Dragablz.Services
 
         public static void Init()
         {
+            Layouts = new List<Layout>();
             if (Application.Current?.MainWindow != null && !isInitiated)
             {
                 Application.Current.MainWindow.ContentRendered += MainWindow_ContentRendered;
@@ -45,6 +53,7 @@ namespace Dragablz.Services
         /// </summary>
         /// <param name="layout"></param>
         static bool layoutHasContent = false;
+        public static List<Layout> Layouts;
         static LayoutAccessor mainLayoutAccessor;
         public static void RestoreItemHelper(Layout layout)
         {
@@ -60,27 +69,25 @@ namespace Dragablz.Services
 
             if (openedWindows is null)
                 openedWindows = new List<(Action<bool>, bool)>();
-            foreach (var layoutGroup in layoutGroups)
+
+            var windowsGroups = tabItems.Where(x => x.Content is DragablzTabItem).OrderBy(t => (t.Content as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.Content as DragablzTabItem).WindowID);
+            foreach (var windowsGroup in windowsGroups)
             {
-                var windowsGroups = layoutGroup.Where(x => x.Content is DragablzTabItem).OrderBy(t => (t.Content as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.Content as DragablzTabItem).WindowID);
-                foreach (var windowsGroup in windowsGroups)
+                mainLayoutAccessor = layoutAccessor;
+                var tabablzControl = mainLayoutAccessor.TabablzControl;
+                var hasWindow = false;
+                var tabControlItems = windowsGroup.Where(x => x.DataContext is DragablzTabItem).OrderBy(t => (t.DataContext as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.DataContext as DragablzTabItem).TabControlName);
+                foreach (var items in tabControlItems)
                 {
-                    mainLayoutAccessor = layoutAccessor;
-                    var tabablzControl = mainLayoutAccessor.TabablzControl;
-                    var hasWindow = false;
-                    var tabControlItems = windowsGroup.Where(x => x.DataContext is DragablzTabItem).OrderBy(t => (t.DataContext as DragablzTabItem).CurrentState.BranchNumber).GroupBy(x => (x.DataContext as DragablzTabItem).TabControlName);
-                    foreach (var items in tabControlItems)
+                    if (items.Where(i => (i.DataContext as DragablzTabItem).CurrentState.IsMainWindow).Any())
                     {
-                        if (items.Where(i => (i.DataContext as DragablzTabItem).CurrentState.IsMainWindow).Any())
-                        {
-                            RestoreTabs(items, tabablzControl, hasWindow);
-                        }
-                        else
-                        {
-                            openedWindows.Add(((hasWindow) => RestoreTabs(items, tabablzControl, hasWindow), hasWindow));
-                        }
-                        hasWindow = true;
+                        RestoreTabs(items, tabablzControl, hasWindow);
                     }
+                    else
+                    {
+                        openedWindows.Add(((hasWindow) => RestoreTabs(items, tabablzControl, hasWindow), hasWindow));
+                    }
+                    hasWindow = true;
                 }
             }
         }
@@ -276,6 +283,10 @@ namespace Dragablz.Services
         private static void MainWindow_ContentRendered(object sender, EventArgs e)
         {
             hasMainWindowRendered = true;
+            foreach (var item in Layouts)
+            {
+                RestoreItemHelper(item);
+            }
             if (openedWindows is not null)
             {
                 foreach (var window in openedWindows)
@@ -287,7 +298,7 @@ namespace Dragablz.Services
         private static void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
 
-            //Settings.Default.Layout = null;
+           Settings.Default.Layout = null;
 
             var l = Settings.Default.Layout;
             if (l is not null)
@@ -311,7 +322,7 @@ namespace Dragablz.Services
 
             foreach (var item in states.dragablzTabItemState.OrderBy(s => s.BranchNumber))
             {
-                item.BranchNumber = ++Layout.branchNumber;
+                item.BranchNumber = ++branchNumber;
             }
 
             List<TabablzControl> tabs = new List<TabablzControl>();

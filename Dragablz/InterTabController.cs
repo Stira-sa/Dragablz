@@ -41,7 +41,7 @@ namespace Dragablz
 
         public static readonly DependencyProperty InterTabClientProperty = DependencyProperty.Register(
             "InterTabClient", typeof (IInterTabClient), typeof (InterTabController),
-            new PropertyMetadata(new DefaultInterTabClient()));
+            new PropertyMetadata(new WindowInterTabClient()));
 
         public IInterTabClient InterTabClient
         {
